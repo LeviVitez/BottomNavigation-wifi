@@ -6,16 +6,22 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.format.Formatter;
 import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
+
+import java.text.Format;
 
 public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigation;
@@ -43,12 +49,30 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
                 case R.id.wifi_off:
-                    //TODO wifi ki
+                    //android 10 (api 29) és afelett
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                        info.setText("nincs jogosultság a wofo állapot módosytásásra");
+                        Intent panelIntent = new Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY);
+                        startActivityForResult(panelIntent, 0);
+                    } else {
+                        //CHANGE WIFI STATE ENGEDÉLY KELL, CSAK ANDROID 10 ALATT MŰKÖDIK
+                        wifiManager.setWifiEnabled(false);
+                        info.setText("wifi kikapcsolva");
+                    }
                     break;
                 case R.id.wifi_info:
-                    //TODO ip cím lekérdezése
+                    ConnectivityManager ConnectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                    NetworkInfo networkInfo = ConnectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+                    if (networkInfo.isConnected()) {
+                        int ipnumber = wifiInfo.getIpAddress();
+                        String ipaddress = Formatter.formatIpAddress(ipnumber);
+                        info.setText("IP:" + ipaddress);
+                    } else {
+                        info.setText("new csatlakoztál wifi hálózathoz");
+                    }
                     break;
             }
+
             return false;
         });
     }
@@ -66,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 0) {
             if (wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED || wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLING) {
                 info.setText("wifi Bekapcsolva");
-            } else if (wifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED || wifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLING){
+            } else if (wifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED || wifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLING) {
                 info.setText("wifi Kikapcsolva");
             }
         }
